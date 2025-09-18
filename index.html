@@ -1,0 +1,389 @@
+<!DOCTYPE html>
+<html>
+
+<head>
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Scorecard Team Enteries</title>
+    <script src="https://ajax.googleapis.com/ajax/libs/angularjs/1.6.9/angular.min.js"></script>
+    <script src="CricScoreLog.js"></script>
+    <style>
+        @font-face {
+            font-family: 'Norwester';
+            src: url('fonts/norwester.otf') format('opentype');
+        }
+
+        body {
+            font-size: xx-large;
+            font-family: 'Norwester', sans-serif;
+            background-color: #0c2f4e;
+            color: rgba(255, 255, 255, 0.85);
+            margin: 0;
+            display: flex;
+            flex-direction: column;
+            min-height: 100vh;
+        }
+
+        input {
+            vertical-align: middle;
+            line-height: inherit;
+        }
+
+        .form-row {
+            display: flex;
+            flex-direction: column;
+            gap: 1em;
+        }
+
+        .tname-lable {
+            display: inline-block;
+            width: 115px;
+        }
+
+        .game-info-lable {
+            display: inline-block;
+            width: 220px;
+        }
+
+        .lineups-row {
+            display: flex;
+            justify-content: center;
+            align-items: flex-start;
+            gap: 35px;
+        }
+
+        table,
+        th {
+            margin: 0 auto;
+            width: 100%;
+            border-collapse: collapse;
+            background-color: rgba(255, 255, 255, 0.1);
+        }
+
+        th {
+            color: rgba(255, 255, 255, 1);
+        }
+
+        td {
+            border-top: 0.5px solid rgba(255, 255, 255, 0.33);
+            border-bottom: 0.5px solid rgba(255, 255, 255, 0.33);
+            border-left: none;
+            border-right: none;
+        }
+
+        .main-container {
+            padding: 20px;
+            flex: 1;
+        }
+
+        .top-left {
+            top: 0;
+            left: 0;
+        }
+
+        .bottom-right {
+            bottom: 0;
+            right: 0;
+            transform: rotate(180deg);
+        }
+
+        a {
+            color: rgba(255, 255, 255, 1);
+        }
+
+        .my-footer {
+
+            background-color: rgba(255, 255, 255, 0.1);
+            color: rgba(255, 255, 255, 0.9);
+            text-align: center;
+            padding: 15px;
+            font-size: 18px;
+            border-top: 1px solid rgba(255, 255, 255, 0.2);
+            z-index: 100;
+            /* make sure it stays on top of strips */
+        }
+
+        .my-footer a {
+            color: #5da0f4;
+            text-decoration: none;
+            margin: 0 10px;
+        }
+
+        .my-footer a:hover {
+            text-decoration: underline;
+        }
+
+        input[type="text"],
+        input[type="number"] {
+            color: white;
+            /* input text color */
+            background-color: rgba(255, 255, 255, 0.1);
+            /* optional for contrast */
+            border: 1px solid rgba(255, 255, 255, 0.4);
+            padding: 6px;
+            border-radius: 4px;
+        }
+
+        input[type="button"] {
+            color: white;
+            background-color: #1f4d73;
+            /* dark blue to match your theme */
+            border: none;
+            padding: 10px 18px;
+            border-radius: 4px;
+            cursor: pointer;
+            font-family: 'Norwester', sans-serif;
+            font-size: large;
+            transition: background-color 0.3s ease, transform 0.2s ease;
+        }
+
+        input[type="button"]:hover {
+            background-color: #1e5a8a;
+            /* lighter on hover */
+            transform: scale(1.05);
+            /* subtle zoom */
+        }
+
+        /* Hide the default radio circle */
+        input[type="radio"] {
+            appearance: none;
+            /* removes default */
+            -webkit-appearance: none;
+            -moz-appearance: none;
+            width: 18px;
+            height: 18px;
+            border: 2px solid rgba(255, 255, 255, 0.7);
+            border-radius: 50%;
+            outline: none;
+            cursor: pointer;
+            background-color: transparent;
+            transition: all 0.3s ease;
+            vertical-align: middle;
+            margin-right: 8px;
+        }
+
+        /* Glow when checked */
+        input[type="radio"]:checked {
+            background-color: #1e5a8a;
+            /* filled circle */
+            box-shadow: 0 0 6px #1e90ff;
+            /* glowing effect */
+            border-color: #1e90ff;
+        }
+
+        /* Glowing themed button */
+        .start-match-btn {
+            color: white;
+            /* text color */
+            background-color: rgba(30, 90, 138, 0.85);
+            /* dark blue */
+            border: none;
+            padding: 12px 24px;
+            border-radius: 10px;
+            font-family: 'Norwester', sans-serif;
+            font-size: 1.1em;
+            cursor: pointer;
+            box-shadow: 0 0 8px rgba(30, 123, 189, 0.6);
+            /* soft glow */
+            transition: all 0.3s ease;
+            margin-top: 15px;
+            display: inline-block;
+        }
+
+        /* Hover effect */
+        .start-match-btn:hover {
+            background-color: rgba(40, 123, 189, 0.95);
+            /* lighter blue */
+            box-shadow: 0 0 12px rgba(40, 123, 189, 0.8);
+            /* stronger glow */
+            transform: scale(1.05);
+            /* subtle zoom */
+        }
+
+        /* Disabled state (if you want to disable before selection) */
+        .start-match-btn.disabled {
+            pointer-events: none;
+            opacity: 0.5;
+            box-shadow: none;
+        }
+
+
+        @media(min-width: 768px) {
+            .form-row {
+                flex-direction: row;
+                align-items: flex-start;
+            }
+
+            .left {
+                margin-right: auto;
+            }
+
+            .right {
+                margin-left: auto;
+            }
+
+            .main-container {
+                padding: 35px;
+                min-height: calc(100vh - 80px);
+            }
+
+            .center {
+                margin-left: auto;
+                margin-right: auto;
+                /* You can adjust the width as needed */
+            }
+
+        }
+
+        @media(max-width: 767px) {
+            body {
+                font-size: 22px;
+            }
+
+            .main-container {
+                width: 100%;
+            }
+
+            .tname-lable {
+                width: 100px;
+            }
+
+            .game-info-lable {
+                width: 160px;
+            }
+
+            .lineups-row {
+                gap: 10px;
+            }
+
+            .left {
+                font-size: 28px;
+            }
+        }
+    </style>
+</head>
+
+<body ng-app="scoreboard" ng-controller="regiCtrl">
+
+    <div class="main-container">
+        <form name="registration" novalidate>
+            <div class="form-row">
+                <div class="left">
+                    <label class="tname-lable" for="team_a">team A : </label>
+                    <input type="text" id="team_a" ng-model="team_a" name="team_a" required>
+                    <span style="color: red;" ng-show="registration.team_a.$dirty && registration.team_a.$invalid">
+                        <span ng-show="registration.team_a.$error.required">team A name is required</span>
+                    </span>
+                    <br>
+                    <label class="tname-lable" for="team_b">team B : </label>
+                    <input type="text" id="team_b" ng-model="team_b" name="team_b" required>
+                    <span style="color: red;" ng-show="registration.team_b.$dirty && registration.team_b.$invalid">
+                        <span ng-show="registration.team_b.$error.required">team B name is required</span>
+                    </span>
+                </div>
+                <div class="center">
+                    <label for="match_type">match type:</label><br>
+                    <input type="radio" id="limited_overs" ng-model="match_type" value="limited_overs"
+                        ng-click="setMatchType('limOvers')">limited overs<br>
+                    <input type="radio" id="days_cricket" ng-model="match_type" value="days_cricket"
+                        ng-click="setMatchType('multiDays')">days cricket
+                </div>
+                <div class="right" ng-show="match_type === 'limOvers'">
+                    <label class="game-info-lable" for="numPlayers">team size :</label>
+                    <input type="number" name="numPlayers" id="numPlayers" ng-model="numPlayers" min="2" max="11"
+                        placeholder="11"><br>
+
+                    <label class="game-info-lable" for="total_overs">max overs :</label>
+                    <input type="number" name="total_overs" id="total_overs" ng-model="maxovers" min="1" max="100"
+                        placeholder="20">
+                </div>
+                <div class="right" ng-show="match_type === 'multiDays'">
+                    <label class="game-info-lable" for="numPlayers">team size :</label>
+                    <input type="number" name="numPlayers" id="numPlayers" ng-model="numPlayers" min="2" max="11"
+                        placeholder="11"><br>
+                    <label class="game-info-lable" for="max_days">maximum days :</label>
+                    <input type="number" name="max_days" id="max_days" ng-model="max_days" min="1" max="5"
+                        placeholder="3"><br>
+                    <label class="game-info-lable" for="overs_per_day">overs per day :</label>
+                    <input type="number" name="overs_per_day" id="overs_per_day" ng-model="overs_per_day" min="1"
+                        max="100" placeholder="15">
+                </div>
+            </div>
+            <input type="button" value="SUBMIT"
+                ng-disabled="registration.team_a.$dirty && registration.team_a.$invalid || registration.team_b.$dirty && registration.team_b.$invalid"
+                ng-click="addLineups()">
+        </form>
+
+        <h3 style="text-align: center;color: rgba(255, 255, 255, 1);" ng-show="lineups">add lineups</h3>
+        <div class="lineups-row">
+            <div name="ta_lineup" style="text-align: center;" ng-show="lineups">
+                <label for="paname">player name:</label>
+                <input type="text" ng-model="ta_newPlayer.name" required>
+                <span style="color: red;" ng-show="ta_lineup.pname.$dirty && ta_lineup.pname.$invalid">
+                    <span ng-show="ta_lineup.pname.$error.required">player name required</span>
+                </span>
+                <input type="hidden" ng-model="ta_newPlayer.id">
+                <input type="button" value="Add" ng-disabled="ta_lineup.pname.$dirty && ta_lineup.pname.$invalid"
+                    ng-click="saveTa()">
+                <br><br>
+                <table>
+                    <tr>
+                        <th>{{team_a}}</th>
+                    </tr>
+                    <tr ng-repeat="p in ta_players">
+                        <td>{{p.name}}</td>
+                    </tr>
+                </table><br>
+            </div>
+            <div name="tb_lineup" style="text-align: center;" ng-show="lineups">
+                <label for="pbname">player name:</label>
+                <input type="text" ng-model="tb_newPlayer.name" required>
+                <span style="color: red;" ng-show="tb_lineup.pname.$dirty && tb_lineup.pname.$invalid">
+                    <span ng-show="tb_lineup.pname.$error.required">player name required</span>
+                </span>
+                <input type="hidden" ng-model="tb_newPlayer.id">
+                <input type="button" value="Add" ng-disabled="tb_lineup.pname.$dirty && tb_lineup.pname.$invalid"
+                    ng-click="saveTb()">
+                <br><br>
+                <table>
+                    <tr>
+                        <th>{{team_b}}</th>
+                    </tr>
+                    <tr ng-repeat="p in tb_players">
+                        <td>{{p.name}}</td>
+                    </tr>
+                </table><br>
+            </div>
+        </div><br>
+        <div style="clear: both;text-align: center;width: 100%;" ng-show="lineups">
+            <input type="button" value="SAVE" ng-click="toss()"><br>
+        </div><br>
+        <div>
+            <p ng-show="Toss">toss:
+                <input type="radio" ng-model="tosswin" value="team_a" ng-click="tossA()">{{team_a}}
+                <input type="radio" ng-model="tosswin" value="team_b" ng-click="tossB()">{{team_b}}
+                <br><br>
+                elected to:
+                <input type="radio" ng-model="Elc_To" value="bat">bat
+                <input type="radio" ng-model="Elc_To" value="field">field
+                <br><br>
+                <input type="button" value="SAVE" ng-click="display()">
+            </p>
+        </div>
+        <div ng-show="Isvisible" style="text-align: center;">
+            <h2>{{team_a}} vs {{team_b}}</h2>
+            <p>{{Toss_Won}} won the toss and elected to {{Elc_To}} first</p>
+            <button class="start-match-btn" type="button" ng-click="startMatch()">Start Match</button>
+        </div>
+    </div>
+    <div class="my-footer">
+        <p><strong>About:</strong> This is a cricket scorecard app for managing team entries and matches.</p>
+        <p>
+            Contact me:
+            <a href="mailto:prupasar@gmail.com">prupasar@gmail.com</a> |
+            <a href="https://github.com/yourgithub" target="_blank">GitHub</a> |
+            <a href="https://linkedin.com/in/yourlinkedin" target="_blank">LinkedIn</a>
+        </p>
+    </div>
+</body>
+
+</html>
