@@ -131,9 +131,8 @@
 
         <div class="header">
             <p><b>{{Team_a}} vs {{Team_b}}</b>
-                <span style="float: right;">DAY{{Crr_Day}}<span ng-show="Day_stumps">,<br>Stumps</span></span>
+                <span style="float: right;">{{Innings}} <span>{{ (i == 0) ? '1st' : (i> 0) ? '2nd' : '' }}</span> Innings</span>
             </p>
-            <p>{{Innings}} <span>{{ (i == 0) ? '1st' : (i> 0) ? '2nd' : '' }}</span> Innings</p>
         </div>
 
         <div class="score-summary flex-row">
@@ -363,3 +362,4 @@
 
 
 </html>
+
