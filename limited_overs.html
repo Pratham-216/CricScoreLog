@@ -256,7 +256,7 @@
             <th>SR</th>
             <th>Status</th>
         </tr>
-                    <tr ng-repeat="p in (Innings === Team_a ? Team_a_battingscores : Team_b_battingscores)">
+                    <tr ng-repeat="p in Ist_inn_batting">
                     <td>{{p.name}}</td>
                     <td>{{p.runs}}</td>
                     <td>{{p.balls}}</td>
@@ -280,7 +280,7 @@
             <th>Eco</th>
             <th>Extras</th>
         </tr>
-                <tr ng-repeat="p in (Innings === Team_a ? Team_b_bowlingscores : Team_a_bowlingscores)">
+                <tr ng-repeat="p in Ist_inn_bowling">
             <td>{{p.name}}</td>
             <td>{{p.overs}}</td>
             <td>{{p.balls}}</td>
@@ -362,4 +362,3 @@
 
 
 </html>
-
