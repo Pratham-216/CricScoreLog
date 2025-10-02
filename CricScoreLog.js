@@ -91,6 +91,8 @@ app.controller('regiCtrl', function ($scope) {
     }
     $scope.display = function () {
         if ($scope.registration.$valid) {
+            console.log('[DEBUG] Setting localStorage TOSS:', $scope.Toss_Won);
+            console.log('[DEBUG] Setting localStorage Elected:', $scope.Elc_To);
             localStorage.setItem("TOSS", $scope.Toss_Won);
             localStorage.setItem("Elected", $scope.Elc_To);
             $scope.Isvisible = true;  // Make the score display visible
@@ -151,63 +153,146 @@ app.controller('DaysCricsysCtrl', function ($scope) {
     $scope.FollowOn = parseInt(localStorage.getItem("is_followed_on")) || 0;
     $scope.Target = parseInt(localStorage.getItem("target")) || 0;
     $scope.result = localStorage.getItem("final_result");
-    $scope.battingStats = { "1st": {}, "2nd": {}, "3rd": {}, "4th": {} };
-    $scope.bowlingStats = { "1st": {}, "2nd": {}, "3rd": {}, "4th": {} };
-    $scope.initBowlingStatsForInnings = function (innNo, battingTeam, bowlingTeam) {
-        var innkey = innNo + "Innings"
-
-        $scope.battingStats[innkey] = {};
-        $scope.bowlingStats[innkey] = {};
-
-        battingTeam.forEach(function (playerId) {
-            $scope.battingStats[innkey][playerId] = {
-                runsScored: 0,
-                ballsFaced: 0,
-                Bfours: 0,
-                Bsix: 0,
+    // --- Robust per-innings, per-team player stats arrays for 4 innings ---
+    // Batting and bowling arrays for each team and each innings
+    function getOrInitArray(key, lineup, isBatting) {
+        let arr = JSON.parse(localStorage.getItem(key));
+        if (!arr || !Array.isArray(arr) || arr.length !== lineup.length) {
+            // Initialize from lineup
+            arr = lineup.map(player => isBatting ? {
+                pid: player.id,
+                name: player.name,
+                runs: 0,
+                balls: 0,
+                fours: 0,
+                six: 0,
                 strikeRate: 0,
                 isOut: false
-            };
-        });
-
-        bowlingTeam.forEach(function (playerId) {
-            $scope.bowlingStats[innkey][playerId] = {
-                oversbowled: 0,
-                ballsbowled: 0,
-                runsconceded: 0,
-                wicketsTaken: 0,
+            } : {
+                pid: player.id,
+                name: player.name,
+                overs: 0,
+                balls: 0,
+                runsConceded: 0,
+                wickets: 0,
                 economy: 0,
-                extrasconceded: 0
-            };
+                extrasConceded: 0
+            });
+        }
+        return arr;
+    }
 
-        });
+    // For each innings, for each team
+    $scope.Team_a_battingscores_1st = getOrInitArray("Team_a_battingscores_1st", $scope.Team_a_lineups, true);
+    $scope.Team_b_battingscores_1st = getOrInitArray("Team_b_battingscores_1st", $scope.Team_b_lineups, true);
+    $scope.Team_a_battingscores_2nd = getOrInitArray("Team_a_battingscores_2nd", $scope.Team_a_lineups, true);
+    $scope.Team_b_battingscores_2nd = getOrInitArray("Team_b_battingscores_2nd", $scope.Team_b_lineups, true);
+    $scope.Team_a_battingscores_3rd = getOrInitArray("Team_a_battingscores_3rd", $scope.Team_a_lineups, true);
+    $scope.Team_b_battingscores_3rd = getOrInitArray("Team_b_battingscores_3rd", $scope.Team_b_lineups, true);
+    $scope.Team_a_battingscores_4th = getOrInitArray("Team_a_battingscores_4th", $scope.Team_a_lineups, true);
+    $scope.Team_b_battingscores_4th = getOrInitArray("Team_b_battingscores_4th", $scope.Team_b_lineups, true);
+
+    $scope.Team_a_bowlingscores_1st = getOrInitArray("Team_a_bowlingscores_1st", $scope.Team_a_lineups, false);
+    $scope.Team_b_bowlingscores_1st = getOrInitArray("Team_b_bowlingscores_1st", $scope.Team_b_lineups, false);
+    $scope.Team_a_bowlingscores_2nd = getOrInitArray("Team_a_bowlingscores_2nd", $scope.Team_a_lineups, false);
+    $scope.Team_b_bowlingscores_2nd = getOrInitArray("Team_b_bowlingscores_2nd", $scope.Team_b_lineups, false);
+    $scope.Team_a_bowlingscores_3rd = getOrInitArray("Team_a_bowlingscores_3rd", $scope.Team_a_lineups, false);
+    $scope.Team_b_bowlingscores_3rd = getOrInitArray("Team_b_bowlingscores_3rd", $scope.Team_b_lineups, false);
+    $scope.Team_a_bowlingscores_4th = getOrInitArray("Team_a_bowlingscores_4th", $scope.Team_a_lineups, false);
+    $scope.Team_b_bowlingscores_4th = getOrInitArray("Team_b_bowlingscores_4th", $scope.Team_b_lineups, false);
+
+    // Helper to get the correct array for the current innings and team
+    function getBattingArr(team, innIdx) {
+        const arrs = [
+            team === 'A' ? $scope.Team_a_battingscores_1st : $scope.Team_b_battingscores_1st,
+            team === 'A' ? $scope.Team_a_battingscores_2nd : $scope.Team_b_battingscores_2nd,
+            team === 'A' ? $scope.Team_a_battingscores_3rd : $scope.Team_b_battingscores_3rd,
+            team === 'A' ? $scope.Team_a_battingscores_4th : $scope.Team_b_battingscores_4th
+        ];
+        return arrs[innIdx];
+    }
+    function getBowlingArr(team, innIdx) {
+        const arrs = [
+            team === 'A' ? $scope.Team_a_bowlingscores_1st : $scope.Team_b_bowlingscores_1st,
+            team === 'A' ? $scope.Team_a_bowlingscores_2nd : $scope.Team_b_bowlingscores_2nd,
+            team === 'A' ? $scope.Team_a_bowlingscores_3rd : $scope.Team_b_bowlingscores_3rd,
+            team === 'A' ? $scope.Team_a_bowlingscores_4th : $scope.Team_b_bowlingscores_4th
+        ];
+        return arrs[innIdx];
+    }
+
+
+    // Swap striker and non-striker
+    $scope.swapStrikers = function() {
+        var temp = $scope.strikerId;
+        $scope.strikerId = $scope.nonStrikerId;
+        $scope.nonStrikerId = temp;
+    };
+    // Update batting stats for a player in the current inning
+    $scope.updateBatting = function (playerId, addruns, boundary = false, out = false) {
+        let innIdx = $scope.i;
+        let team = ($scope.Innings === $scope.Team_a) ? 'A' : 'B';
+        let arr = getBattingArr(team, innIdx);
+        let player = arr.find(p => p.pid == playerId);
+        if (!player) return;
+        player.runs += addruns;
+        player.balls += 1;
+        if (addruns == 4 && boundary) player.fours += 1;
+        if (addruns == 6 && boundary) player.six += 1;
+        if (out) player.isOut = true;
+        player.strikeRate = player.balls > 0 ? ((player.runs / player.balls) * 100).toFixed(2) : 0;
+        syncPlayerStatsToLocalStorage();
     };
 
-    $scope.updateBatting = function (playerId, addruns, boundary = false) {
-        let innkey = $scope.current_inn[$scope.i];
-        if (!$scope.battingStats[innkey][playerId]) return;
-
-        $scope.battingStats[innkey][playerId].runsScored += addrunsruns;
-        $scope.battingStats[innkey][playerId].ballsFaced += 1;
-
-        if (addruns == 4 && boundary == true) $scope.battingStats[innkey][playerId].Bfours += 1;
-        if (addruns == 6 && boundary == true) $scope.battingStats[innkey][playerId].Bsix += 1;
-    };
-
+    // Update bowling stats for a player in the current inning
     $scope.updateBowling = function (playerId, addruns, iswicket = false, isextra = false, addextra = 0) {
-        let innkey = $scope.current_inn[$scope.i];
-        if (!$scope.bowlingStats[innkey][playerId]) return;
-
-        if (isextra == false) {
-            $scope.bowlingStats[innkey][playerId].ballsbowled += 1;
-            if ($scope.bowlingStats[innkey][playerId].ballsbowled % 6 == 0) {
-                $scope.bowlingStats[innkey][playerId].oversbowled += 1;
-                $scope.bowlingStats[innkey][playerId].ballsbowled = 0;
+        let innIdx = $scope.i;
+        let team = ($scope.Innings === $scope.Team_a) ? 'B' : 'A';
+        let arr = getBowlingArr(team, innIdx);
+        let player = arr.find(p => p.pid == playerId);
+        if (!player) return;
+        if (!isextra) {
+            player.balls += 1;
+            if (player.balls % 6 === 0) {
+                player.overs += 1;
+                player.balls = 0;
             }
         }
-        $scope.bowlingStats[innkey][playerId].runsconceded += addruns;
-        if (iswicket == true) $scope.bowlingStats[innkey][playerId].wicketsTaken += 1;
-        if (isextra == true) $scope.bowlingStats[innkey][playerId].extrasconceded += addextra;
+        player.runsConceded += addruns;
+        if (iswicket) player.wickets += 1;
+        if (isextra) player.extrasConceded += addextra;
+        let totalBalls = player.overs * 6 + player.balls;
+        player.economy = totalBalls > 0 ? (player.runsConceded / (totalBalls / 6)).toFixed(2) : 0;
+        syncPlayerStatsToLocalStorage();
+    };
+
+    // Sync all player stats arrays to localStorage
+    function syncPlayerStatsToLocalStorage() {
+        localStorage.setItem("Team_a_battingscores_1st", JSON.stringify($scope.Team_a_battingscores_1st));
+        localStorage.setItem("Team_b_battingscores_1st", JSON.stringify($scope.Team_b_battingscores_1st));
+        localStorage.setItem("Team_a_battingscores_2nd", JSON.stringify($scope.Team_a_battingscores_2nd));
+        localStorage.setItem("Team_b_battingscores_2nd", JSON.stringify($scope.Team_b_battingscores_2nd));
+        localStorage.setItem("Team_a_battingscores_3rd", JSON.stringify($scope.Team_a_battingscores_3rd));
+        localStorage.setItem("Team_b_battingscores_3rd", JSON.stringify($scope.Team_b_battingscores_3rd));
+        localStorage.setItem("Team_a_battingscores_4th", JSON.stringify($scope.Team_a_battingscores_4th));
+        localStorage.setItem("Team_b_battingscores_4th", JSON.stringify($scope.Team_b_battingscores_4th));
+
+        localStorage.setItem("Team_a_bowlingscores_1st", JSON.stringify($scope.Team_a_bowlingscores_1st));
+        localStorage.setItem("Team_b_bowlingscores_1st", JSON.stringify($scope.Team_b_bowlingscores_1st));
+        localStorage.setItem("Team_a_bowlingscores_2nd", JSON.stringify($scope.Team_a_bowlingscores_2nd));
+        localStorage.setItem("Team_b_bowlingscores_2nd", JSON.stringify($scope.Team_b_bowlingscores_2nd));
+        localStorage.setItem("Team_a_bowlingscores_3rd", JSON.stringify($scope.Team_a_bowlingscores_3rd));
+        localStorage.setItem("Team_b_bowlingscores_3rd", JSON.stringify($scope.Team_b_bowlingscores_3rd));
+        localStorage.setItem("Team_a_bowlingscores_4th", JSON.stringify($scope.Team_a_bowlingscores_4th));
+        localStorage.setItem("Team_b_bowlingscores_4th", JSON.stringify($scope.Team_b_bowlingscores_4th));
+    }
+
+    // Helpers for UI to get player stats for a given innings
+    $scope.getBattingScores = function(team, innIdx) {
+        return getBattingArr(team, innIdx);
+    };
+    $scope.getBowlingScores = function(team, innIdx) {
+        return getBowlingArr(team, innIdx);
     };
     function syncToLocalStorage() {
         localStorage.setItem("Runs", $scope.runs);
@@ -263,22 +348,25 @@ app.controller('DaysCricsysCtrl', function ($scope) {
     }
 
     function setupInningsOrder() {
+        // Normalize elc value
+        var elected = ($scope.elc || '').trim();
+        console.log('DEBUG: Toss:', $scope.Toss, 'Elected:', elected);
         if ($scope.Toss == $scope.Team_a) {
-            if ($scope.elc == "Bat") {
+            if (elected == "Bat") {
                 $scope.Ist_inn = $scope.Team_a;
                 $scope.IInd_inn = $scope.Team_b;
             }
-            else {
+            else if (elected == "Field") {
                 $scope.Ist_inn = $scope.Team_b;
                 $scope.IInd_inn = $scope.Team_a;
             }
         }
         else if ($scope.Toss == $scope.Team_b) {
-            if ($scope.elc == "Bat") {
+            if (elected == "Bat") {
                 $scope.Ist_inn = $scope.Team_b;
                 $scope.IInd_inn = $scope.Team_a;
             }
-            else {
+            else if (elected == "Field") {
                 $scope.Ist_inn = $scope.Team_a;
                 $scope.IInd_inn = $scope.Team_b;
             }
@@ -307,20 +395,6 @@ app.controller('DaysCricsysCtrl', function ($scope) {
     }
     updateCurrinn();
     $scope.next_innings = function () {
-        // Save 1st innings player scores before resetting for 2nd innings
-        if ($scope.i === 0) { // 1st innings just finished
-            if ($scope.Innings === $scope.Team_a) {
-                $scope.Ist_inn_batting = angular.copy($scope.Team_a_battingscores);
-                $scope.Ist_inn_bowling = angular.copy($scope.Team_b_bowlingscores);
-            } else {
-                $scope.Ist_inn_batting = angular.copy($scope.Team_b_battingscores);
-                $scope.Ist_inn_bowling = angular.copy($scope.Team_a_bowlingscores);
-            }
-            localStorage.setItem("Ist_inn_batting", JSON.stringify($scope.Ist_inn_batting));
-            localStorage.setItem("Ist_inn_bowling", JSON.stringify($scope.Ist_inn_bowling));
-        }
-
-        // ...existing code to reset for next innings...
         $scope.runs = 0;
         $scope.wkt = 0;
         $scope.whole_overs = 0;
@@ -331,6 +405,7 @@ app.controller('DaysCricsysCtrl', function ($scope) {
         $scope.EXTRAS = 0;
         $scope.i++;
         $scope.crr = "--";
+        $scope.declared = false;
         updateCurrinn();
         CalTarget();
         syncToLocalStorage();
@@ -467,6 +542,7 @@ app.controller('DaysCricsysCtrl', function ($scope) {
         else {
             $scope.balls = 0;
             $scope.whole_overs++;
+            $scope.swapStrikers();
         }
         $scope.Overs = `${$scope.whole_overs}.${$scope.balls}`;
         syncToLocalStorage();
@@ -503,6 +579,9 @@ app.controller('DaysCricsysCtrl', function ($scope) {
             $scope.wkt = $scope.wkt + 1;
             $scope.over_ball_sim();
             $scope.cal_crr();
+            $scope.updateBowling($scope.bowlerId, 0, true);
+            $scope.updateBatting($scope.strikerId, 0, false, true);
+            syncPlayerStatsToLocalStorage();
         } else {
             alert("End of the innings!!!");
         }
@@ -512,6 +591,9 @@ app.controller('DaysCricsysCtrl', function ($scope) {
             $scope.runs = $scope.runs + 0;
             $scope.over_ball_sim();
             $scope.cal_crr();
+            $scope.updateBatting($scope.strikerId, 0);
+            $scope.updateBowling($scope.bowlerId, 0, false);
+            syncPlayerStatsToLocalStorage();
         } else {
             alert("End of the innings!!!");
         }
@@ -521,6 +603,10 @@ app.controller('DaysCricsysCtrl', function ($scope) {
             $scope.runs = $scope.runs + 1;
             $scope.over_ball_sim();
             $scope.cal_crr();
+            $scope.updateBatting($scope.strikerId, 1);
+            $scope.updateBowling($scope.bowlerId, 1, false);
+            syncPlayerStatsToLocalStorage();
+            $scope.swapStrikers();
         } else {
             alert("End of the innings!!!");
         }
@@ -530,6 +616,9 @@ app.controller('DaysCricsysCtrl', function ($scope) {
             $scope.runs = $scope.runs + 2;
             $scope.over_ball_sim();
             $scope.cal_crr();
+            $scope.updateBatting($scope.strikerId, 2);
+            $scope.updateBowling($scope.bowlerId, 2, false);
+            syncPlayerStatsToLocalStorage();
         } else {
             alert("End of the innings!!!");
         }
@@ -539,6 +628,10 @@ app.controller('DaysCricsysCtrl', function ($scope) {
             $scope.runs = $scope.runs + 3;
             $scope.over_ball_sim();
             $scope.cal_crr();
+            $scope.updateBatting($scope.strikerId, 3);
+            $scope.updateBowling($scope.bowlerId, 3, false);
+            syncPlayerStatsToLocalStorage();
+            $scope.swapStrikers();
         } else {
             alert("End of the innings!!!");
         }
@@ -548,6 +641,9 @@ app.controller('DaysCricsysCtrl', function ($scope) {
             $scope.runs = $scope.runs + 4;
             $scope.over_ball_sim();
             $scope.cal_crr();
+            $scope.updateBatting($scope.strikerId, 4, true);
+            $scope.updateBowling($scope.bowlerId, 4, false);
+            syncPlayerStatsToLocalStorage();
         } else {
             alert("End of the innings!!!");
         }
@@ -557,6 +653,10 @@ app.controller('DaysCricsysCtrl', function ($scope) {
             $scope.runs = $scope.runs + 5;
             $scope.over_ball_sim();
             $scope.cal_crr();
+            $scope.updateBatting($scope.strikerId, 5);
+            $scope.updateBowling($scope.bowlerId, 5, false);
+            syncPlayerStatsToLocalStorage();
+            $scope.swapStrikers();
         } else {
             alert("End of the innings!!!");
         }
@@ -566,6 +666,9 @@ app.controller('DaysCricsysCtrl', function ($scope) {
             $scope.runs = $scope.runs + 6;
             $scope.over_ball_sim();
             $scope.cal_crr();
+            $scope.updateBatting($scope.strikerId, 6, true);
+            $scope.updateBowling($scope.bowlerId, 6, false);
+            syncPlayerStatsToLocalStorage();
         } else {
             alert("End of the innings!!!");
         }
@@ -588,8 +691,11 @@ app.controller('DaysCricsysCtrl', function ($scope) {
     }
     $scope.wide = function () {
         if ($scope.declared == false && $scope.wkt < $scope.max_wkt && $scope.result == null) {
-            $scope.runs = $scope.runs + $scope.extra + 1;
-            $scope.EXTRAS = $scope.EXTRAS + $scope.extra + 1;
+            var runs = $scope.extra + 1;
+            $scope.runs = $scope.runs + runs;
+            $scope.EXTRAS = $scope.EXTRAS + runs;
+            $scope.updateBowling($scope.bowlerId, runs, false, true, runs);
+            syncPlayerStatsToLocalStorage();
             $scope.cal_crr();
             $scope.extra = 0;
         } else {
@@ -598,8 +704,11 @@ app.controller('DaysCricsysCtrl', function ($scope) {
     }
     $scope.no_ball = function () {
         if ($scope.declared == false && $scope.wkt < $scope.max_wkt && $scope.result == null) {
-            $scope.runs = $scope.runs + $scope.extra + 1;
+            var runs = $scope.extra + 1;
+            $scope.runs = $scope.runs + runs;
             $scope.EXTRAS = $scope.EXTRAS + 1;
+            $scope.updateBowling($scope.bowlerId, 1, false, true, 1);
+            syncPlayerStatsToLocalStorage();
             $scope.cal_crr();
             $scope.extra = 0;
         } else {
@@ -611,6 +720,8 @@ app.controller('DaysCricsysCtrl', function ($scope) {
             $scope.runs = $scope.runs + $scope.extra;
             $scope.EXTRAS = $scope.EXTRAS + $scope.extra;
             $scope.over_ball_sim();
+            $scope.updateBowling($scope.bowlerId, 0, false, true, $scope.extra);
+            syncPlayerStatsToLocalStorage();
             $scope.cal_crr();
             $scope.extra = 0;
         } else {
@@ -622,6 +733,8 @@ app.controller('DaysCricsysCtrl', function ($scope) {
             $scope.runs = $scope.runs + $scope.extra;
             $scope.EXTRAS = $scope.EXTRAS + $scope.extra;
             $scope.over_ball_sim();
+            $scope.updateBowling($scope.bowlerId, 0, false, true, $scope.extra);
+            syncPlayerStatsToLocalStorage();
             $scope.cal_crr();
             $scope.extra = 0;
         } else {
@@ -630,8 +743,11 @@ app.controller('DaysCricsysCtrl', function ($scope) {
     }
     $scope.leg_byeOnNB = function () {
         if ($scope.declared == false && $scope.wkt < $scope.max_wkt && $scope.result == null) {
-            $scope.runs = $scope.runs + $scope.extra + 1;
-            $scope.EXTRAS = $scope.EXTRAS + $scope.extra + 1;
+            var runs = $scope.extra + 1;
+            $scope.runs = $scope.runs + runs;
+            $scope.EXTRAS = $scope.EXTRAS + runs;
+            $scope.updateBowling($scope.bowlerId, 1, false, true, runs);
+            syncPlayerStatsToLocalStorage();
             $scope.cal_crr();
             $scope.extra = 0;
         } else {
@@ -640,8 +756,11 @@ app.controller('DaysCricsysCtrl', function ($scope) {
     }
     $scope.byeOnNB = function () {
         if ($scope.declared == false && $scope.wkt < $scope.max_wkt && $scope.result == null) {
-            $scope.runs = $scope.runs + $scope.extra + 1;
-            $scope.EXTRAS = $scope.EXTRAS + $scope.extra + 1;
+            var runs = $scope.extra + 1;
+            $scope.runs = $scope.runs + runs;
+            $scope.EXTRAS = $scope.EXTRAS + runs;
+            $scope.updateBowling($scope.bowlerId, 1, false, true, runs);
+            syncPlayerStatsToLocalStorage();
             $scope.cal_crr();
             $scope.extra = 0;
         } else {
@@ -653,6 +772,9 @@ app.controller('DaysCricsysCtrl', function ($scope) {
             $scope.runs = $scope.runs + 4 + 1;
             $scope.Fours = $scope.Fours + 1;
             $scope.EXTRAS = $scope.EXTRAS + 1;
+            $scope.updateBatting($scope.strikerId, 4, true);
+            $scope.updateBowling($scope.bowlerId, 5, false, true, 1);
+            syncPlayerStatsToLocalStorage();
             $scope.cal_crr();
         } else {
             alert("End of the innings!!!");
@@ -663,6 +785,9 @@ app.controller('DaysCricsysCtrl', function ($scope) {
             $scope.runs = $scope.runs + 6 + 1;
             $scope.Six = $scope.Six + 1;
             $scope.EXTRAS = $scope.EXTRAS + 1;
+            $scope.updateBatting($scope.strikerId, 6, true);
+            $scope.updateBowling($scope.bowlerId, 7, false, true, 1);
+            syncPlayerStatsToLocalStorage();
             $scope.cal_crr();
         } else {
             alert("End of the innings!!!");
@@ -672,9 +797,105 @@ app.controller('DaysCricsysCtrl', function ($scope) {
         $scope.runs = $scope.runs + 5;
         $scope.cal_crr();
     }
+
+    // Get batsman object by playerId for current innings
+    $scope.getBatsmanById = function(playerId) {
+        if (!playerId) return null;
+        var team = ($scope.Innings === $scope.Team_a) ? 'A' : 'B';
+        var arr = $scope.getBattingScores(team, $scope.i);
+        return arr ? arr.find(function(p) { return p.pid == playerId; }) : null;
+    };
+
+    // Get bowler object by playerId for current innings
+    $scope.getBowlerById = function(playerId) {
+        if (!playerId) return null;
+        var team = ($scope.Innings === $scope.Team_a) ? 'B' : 'A';
+        var arr = $scope.getBowlingScores(team, $scope.i);
+        return arr ? arr.find(function(p) { return p.pid == playerId; }) : null;
+    };
+
+    // --- Player selection logic for DaysCricsysCtrl ---
+    $scope.strikerId = null;
+    $scope.nonStrikerId = null;
+    $scope.bowlerId = null;
+
+    /**
+     * Set the striker, non-striker, and bowler by player id.
+     * Ensures striker and non-striker are from the batting team,
+     * and bowler is from the bowling team.
+     * @param {number} strikerId - Player id of the striker batsman
+     * @param {number} nonStrikerId - Player id of the non-striker batsman
+     * @param {number} bowlerId - Player id of the bowler
+     */
+    $scope.selectPlayers = function (strikerId, nonStrikerId, bowlerId) {
+        // Determine current batting and bowling teams
+        let battingLineup, bowlingLineup;
+        if ($scope.Innings === $scope.Team_a) {
+            battingLineup = $scope.Team_a_lineups;
+            bowlingLineup = $scope.Team_b_lineups;
+        } else {
+            battingLineup = $scope.Team_b_lineups;
+            bowlingLineup = $scope.Team_a_lineups;
+        }
+
+        // Validate striker and non-striker from batting team
+        const striker = battingLineup.find(p => p.id == strikerId);
+        const nonStriker = battingLineup.find(p => p.id == nonStrikerId);
+        // Validate bowler from bowling team
+        const bowler = bowlingLineup.find(p => p.id == bowlerId);
+
+        if (!striker) {
+            alert("Invalid striker selected! Must be from batting team.");
+            return;
+        }
+        if (!nonStriker) {
+            alert("Invalid non-striker selected! Must be from batting team.");
+            return;
+        }
+        if (!bowler) {
+            alert("Invalid bowler selected! Must be from bowling team.");
+            return;
+        }
+        if (strikerId == nonStrikerId) {
+            alert("Striker and non-striker cannot be the same player!");
+            return;
+        }
+
+        $scope.strikerId = strikerId;
+        $scope.nonStrikerId = nonStrikerId;
+        $scope.bowlerId = bowlerId;
+    };
+
+    // Set initial players at the start of the match or innings
+    $scope.setInitialPlayers = function () {
+        let battingLineup, bowlingLineup;
+        if ($scope.Innings === $scope.Team_a) {
+            battingLineup = $scope.Team_a_lineups;
+            bowlingLineup = $scope.Team_b_lineups;
+        } else {
+            battingLineup = $scope.Team_b_lineups;
+            bowlingLineup = $scope.Team_a_lineups;
+        }
+        if (battingLineup.length >= 2 && bowlingLineup.length >= 1) {
+            $scope.selectPlayers(
+                battingLineup[0].id, // striker
+                battingLineup[1].id, // non-striker
+                bowlingLineup[0].id  // bowler
+            );
+        }
+    };
+
+    // Call setInitialPlayers at the start
+    $scope.setInitialPlayers();
 });
 
 app.controller('LOCricsysCtrl', function ($scope) {
+    // Swap striker and non-striker
+    $scope.swapStrikers = function() {
+        var temp = $scope.strikerId;
+        $scope.strikerId = $scope.nonStrikerId;
+        $scope.nonStrikerId = temp;
+    };
     // Teams & toss info
     $scope.Team_a = localStorage.getItem("team_a_name");
     $scope.Team_b = localStorage.getItem("team_b_name");
@@ -856,7 +1077,7 @@ app.controller('LOCricsysCtrl', function ($scope) {
                 $scope.Ist_inn = $scope.Team_b;
                 $scope.IInd_inn = $scope.Team_a;
             }
-        } else {
+        } else if($scope.Toss == $scope.Team_b) {
             if ($scope.elc == "Bat") {
                 $scope.Ist_inn = $scope.Team_b;
                 $scope.IInd_inn = $scope.Team_a;
@@ -950,6 +1171,7 @@ app.controller('LOCricsysCtrl', function ($scope) {
         } else {
             $scope.balls = 0;
             $scope.whole_overs++;
+            $scope.swapStrikers();
         }
         $scope.Overs = `${$scope.whole_overs}.${$scope.balls}`;
         syncToLocalStorage();
@@ -979,6 +1201,7 @@ app.controller('LOCricsysCtrl', function ($scope) {
             $scope.updatebattingscore($scope.Innings === $scope.Team_a ? 'A' : 'B', $scope.strikerId, 1); // Example playerId
             $scope.updatebowlingscore($scope.Innings === $scope.Team_a ? 'B' : 'A', $scope.bowlerId, 1, false); // Example bowlerId
             syncScoresToLocalStorage();
+            $scope.swapStrikers();
         } else {
             alert("End of the innings!!!");
         }
@@ -999,6 +1222,7 @@ app.controller('LOCricsysCtrl', function ($scope) {
             $scope.updatebattingscore($scope.Innings === $scope.Team_a ? 'A' : 'B', $scope.strikerId, 3); // Example playerId
             $scope.updatebowlingscore($scope.Innings === $scope.Team_a ? 'B' : 'A', $scope.bowlerId, 3, false); // Example bowlerId
             syncScoresToLocalStorage();
+            $scope.swapStrikers();
         } else {
             alert("End of the innings!!!");
         }
@@ -1009,6 +1233,7 @@ app.controller('LOCricsysCtrl', function ($scope) {
             $scope.updatebattingscore($scope.Innings === $scope.Team_a ? 'A' : 'B', $scope.strikerId, 4); // Example playerId
             $scope.updatebowlingscore($scope.Innings === $scope.Team_a ? 'B' : 'A', $scope.bowlerId, 4, false); // Example bowlerId
             syncScoresToLocalStorage();
+            $scope.swapStrikers();
         } else {
             alert("End of the innings!!!");
         }
@@ -1264,4 +1489,9 @@ app.controller('LOCricsysCtrl', function ($scope) {
         }
         return null;
     };
+    // ...similarly, use $scope.strikerId and $scope.bowlerId in other scoring functions as needed...
 });
+
+
+
+
