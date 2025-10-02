@@ -891,7 +891,7 @@ $scope.IInd_inn_bowling = JSON.parse(localStorage.getItem("IInd_inn_bowling")) |
     localStorage.setItem("IInd_inn_bowling", JSON.stringify($scope.IInd_inn_bowling));
 }
 
-        // ...existing code to reset for next innings...
+        // code to reset for next innings...
         $scope.runs = 0;
         $scope.wkt = 0;
         $scope.whole_overs = 0;
@@ -907,9 +907,7 @@ $scope.IInd_inn_bowling = JSON.parse(localStorage.getItem("IInd_inn_bowling")) |
         syncToLocalStorage();
     };
 
-    // ============================
     // Target Calculation
-    // ============================
     function CalTarget() {
         if ($scope.i == 1) {
             $scope.Target = $scope.Ist_inn_score.Runs + 1;
@@ -917,9 +915,7 @@ $scope.IInd_inn_bowling = JSON.parse(localStorage.getItem("IInd_inn_bowling")) |
         }
     }
 
-    // ============================
     // Result Calculation
-    // ============================
     function makeResult() {
         if ($scope.i == 1) {
             if ($scope.IInd_inn_score.Runs >= $scope.Target) {
@@ -951,9 +947,7 @@ $scope.IInd_inn_bowling = JSON.parse(localStorage.getItem("IInd_inn_bowling")) |
         return lable;
     }
 
-    // ============================
     // Over & CRR
-    // ============================
     $scope.over_ball_sim = function () {
         if ($scope.balls < 5) {
             $scope.balls++;
@@ -972,9 +966,7 @@ $scope.IInd_inn_bowling = JSON.parse(localStorage.getItem("IInd_inn_bowling")) |
         makeResult();
     };
 
-    // ============================
-    // Scoring Functions (unchanged)
-    // ============================
+    // Scoring Functions 
     $scope.dot = function () {
         if ($scope.wkt < $scope.max_wkt && $scope.Overs < $scope.maxovers && !$scope.result) { $scope.runs += 0; $scope.over_ball_sim(); $scope.cal_crr(); 
             $scope.updatebattingscore($scope.Innings === $scope.Team_a ? 'A' : 'B', $scope.strikerId, 0);
@@ -1061,17 +1053,19 @@ $scope.IInd_inn_bowling = JSON.parse(localStorage.getItem("IInd_inn_bowling")) |
         }
     };
     $scope.leg_bye = function () {
-        if ($scope.wkt < $scope.max_wkt && $scope.Overs < $scope.maxovers && !$scope.result) { $scope.runs += $scope.extra; $scope.EXTRAS += $scope.extra; $scope.over_ball_sim(); $scope.cal_crr(); $scope.extra = 0; } else {
+        if ($scope.wkt < $scope.max_wkt && $scope.Overs < $scope.maxovers && !$scope.result && $scope.extra != 0) { $scope.runs += $scope.extra; $scope.EXTRAS += $scope.extra; $scope.over_ball_sim(); $scope.cal_crr(); $scope.extra = 0; }
+        else {
             alert("End of the innings!!!");
         }
     };
     $scope.bye = function () {
-        if ($scope.wkt < $scope.max_wkt && $scope.Overs < $scope.maxovers && !$scope.result) { $scope.runs += $scope.extra; $scope.EXTRAS += $scope.extra; $scope.over_ball_sim(); $scope.cal_crr(); $scope.extra = 0; } else {
+        if ($scope.wkt < $scope.max_wkt && $scope.Overs < $scope.maxovers && !$scope.result && $scope.extra != 0) { $scope.runs += $scope.extra; $scope.EXTRAS += $scope.extra; $scope.over_ball_sim(); $scope.cal_crr(); $scope.extra = 0; }
+        else {
             alert("End of the innings!!!");
         }
     };
     $scope.leg_byeOnNB = function () {
-        if ($scope.wkt < $scope.max_wkt && $scope.Overs < $scope.maxovers && $scope.result == null) {
+        if ($scope.wkt < $scope.max_wkt && $scope.Overs < $scope.maxovers && !$scope.result && $scope.extra != 0) {
             $scope.runs = $scope.runs + $scope.extra + 1;
             $scope.EXTRAS = $scope.EXTRAS + $scope.extra + 1;
             $scope.cal_crr();
@@ -1083,7 +1077,7 @@ $scope.IInd_inn_bowling = JSON.parse(localStorage.getItem("IInd_inn_bowling")) |
         }
     }
     $scope.byeOnNB = function () {
-        if ($scope.wkt < $scope.max_wkt && $scope.Overs < $scope.maxovers && $scope.result == null) {
+        if ($scope.wkt < $scope.max_wkt && $scope.Overs < $scope.maxovers && !$scope.result && $scope.extra != 0) {
             $scope.runs = $scope.runs + $scope.extra + 1;
             $scope.EXTRAS = $scope.EXTRAS + $scope.extra + 1;
             $scope.cal_crr();
@@ -1097,7 +1091,7 @@ $scope.IInd_inn_bowling = JSON.parse(localStorage.getItem("IInd_inn_bowling")) |
     $scope.Nb4plus = function () {
         if ($scope.wkt < $scope.max_wkt && $scope.Overs < $scope.maxovers && $scope.result == null) {
             $scope.runs = $scope.runs + 4 + 1;
-            $scope.Fours = $scope.Fours + 1;
+            $scope.Fours++;
             $scope.EXTRAS = $scope.EXTRAS + 1;
             $scope.cal_crr();
             $scope.updatebattingscore($scope.Innings === $scope.Team_a ? 'A' : 'B', $scope.strikerId, 4, true); // Example playerId
@@ -1110,7 +1104,7 @@ $scope.IInd_inn_bowling = JSON.parse(localStorage.getItem("IInd_inn_bowling")) |
     $scope.Nb6plus = function () {
         if ($scope.wkt < $scope.max_wkt && $scope.Overs < $scope.maxovers && $scope.result == null) {
             $scope.runs = $scope.runs + 6 + 1;
-            $scope.Six = $scope.Six + 1;
+            $scope.Six++;
             $scope.EXTRAS = $scope.EXTRAS + 1;
             $scope.cal_crr();
             $scope.updatebattingscore($scope.Innings === $scope.Team_a ? 'A' : 'B', $scope.strikerId, 6, true); // Example playerId
@@ -1120,12 +1114,12 @@ $scope.IInd_inn_bowling = JSON.parse(localStorage.getItem("IInd_inn_bowling")) |
             alert("End of the innings!!!");
         }
     }
-    $scope.B_four = function () { if ($scope.wkt < $scope.max_wkt && $scope.Overs < $scope.maxovers && $scope.result == null) { $scope.Fours++; $scope.four(); 
+    $scope.B_four = function () { if ($scope.wkt < $scope.max_wkt && $scope.Overs < $scope.maxovers && $scope.result == null) { $scope.Fours++;$scope.runs += 4; $scope.over_ball_sim(); $scope.cal_crr(); 
         $scope.updatebattingscore($scope.Innings === $scope.Team_a ? 'A' : 'B', $scope.strikerId, 4, true); // Example playerId
         $scope.updatebowlingscore($scope.Innings === $scope.Team_a ? 'B' : 'A', $scope.bowlerId, 4, false); // Example bowlerId
         syncScoresToLocalStorage();
     } else { alert("End of the innings!!!"); } };
-    $scope.B_six = function () { if ($scope.wkt < $scope.max_wkt && $scope.Overs < $scope.maxovers && $scope.result == null) { $scope.Six++; $scope.six();
+    $scope.B_six = function () { if ($scope.wkt < $scope.max_wkt && $scope.Overs < $scope.maxovers && $scope.result == null) { $scope.Six++;$scope.runs += 6; $scope.over_ball_sim(); $scope.cal_crr();
         $scope.updatebattingscore($scope.Innings === $scope.Team_a ? 'A' : 'B', $scope.strikerId, 6, true); // Example playerId
         $scope.updatebowlingscore($scope.Innings === $scope.Team_a ? 'B' : 'A', $scope.bowlerId, 6, false); // Example bowlerId
         syncScoresToLocalStorage();
@@ -1260,5 +1254,6 @@ $scope.getBowlerById = function(pid) {
 };
 // ...similarly, use $scope.strikerId and $scope.bowlerId in other scoring functions as needed...
 });
+
 
 
