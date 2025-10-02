@@ -1038,7 +1038,7 @@ $scope.IInd_inn_bowling = JSON.parse(localStorage.getItem("IInd_inn_bowling")) |
     // Extras
     $scope.wide = function () {
         if ($scope.wkt < $scope.max_wkt && $scope.Overs < $scope.maxovers && !$scope.result) { $scope.runs += $scope.extra + 1; $scope.EXTRAS += $scope.extra + 1; $scope.cal_crr(); $scope.extra = 0; 
-            $scope.updatebowlingscore($scope.Innings === $scope.Team_a ? 'B' : 'A', $scope.bowlerId, 1, false, $scope.extra + 1);
+            $scope.updatebowlingscore($scope.Innings === $scope.Team_a ? 'B' : 'A', $scope.bowlerId, $scope.extra + 1, false,true, $scope.extra + 1);
             syncScoresToLocalStorage();
         } else {
             alert("End of the innings!!!");
@@ -1254,6 +1254,7 @@ $scope.getBowlerById = function(pid) {
 };
 // ...similarly, use $scope.strikerId and $scope.bowlerId in other scoring functions as needed...
 });
+
 
 
 
